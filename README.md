@@ -1,200 +1,174 @@
-# Telegram 机器人项目
+# Telegram 机器人 GitHub Actions 部署项目
 
-这是一个集成了消息转发和命令控制功能的 Telegram 机器人项目，部署在 GitHub Actions 上实现 24/7 运行。
+## 项目简介
 
-## 项目功能
+这是一个基于 GitHub Actions 的 Telegram 机器人项目，实现了消息转发、关键词检测和 GitHub Action 触发功能。所有代码和运行环境都部署在 GitHub Actions 上，无需额外服务器。
 
-### 🤖 消息转发机器人
-- 自动转发用户发送给机器人的所有消息到指定用户
-- 支持文本、图片、文档等多种消息类型
-- 每4小时发送健康状态报告
-- 崩溃后自动重启机制
+## 功能特性
 
-### 🎮 命令控制机器人
-- 在指定群聊中接收管理命令
-- `/run` - 触发 GitHub Actions 工作流重新部署
-- `/status` - 检查机器人运行状态
-- `/start` - 查看机器人介绍和可用命令
-- 仅限群组管理员使用命令功能
+- 🤖 **私聊消息转发**：用户私聊发送给机器人的消息自动转发到指定群组
+- 🔍 **关键词检测**：在监控群组中检测预设关键词，触发消息转发
+- ⚡ **GitHub Action 触发**：授权用户通过 `/open` 命令触发 GitHub Action
+- 📊 **完整日志**：提供详细的运行日志和错误报告
+- 🔧 **灵活配置**：通过环境变量自定义所有行为
 
 ## 项目结构
 
 ```
-telegram-bots/
+telegram-bot-project/
 ├── .github/
-│   └── workflows/
-│       └── telegram_bot.yml    # GitHub Actions 工作流
-├── bots/
-│   ├── __init__.py             # 包标识文件
-│   ├── message_bot.py          # 消息转发机器人
-│   └── command_bot.py          # 命令控制机器人
-├── requirements.txt            # Python 依赖
-├── run_bots.sh                # 启动脚本
-└── README.md                  # 项目说明
+│   ├── workflows/
+│   │   └── telegram-bot.yml          # GitHub Actions 工作流配置
+│   └── ISSUE_TEMPLATE/
+│       └── bug_report.md             # 问题报告模板
+├── bot_handler.py                    # 主机器人处理脚本
+├── check_env.py                      # 环境变量检查脚本
+├── requirements.txt                  # Python 依赖包列表
+└── README.md                         # 项目说明文档
 ```
 
 ## 快速开始
 
-### 1. 环境准备
+### 1. 创建 Telegram 机器人
 
-```bash
-# 克隆项目
-git clone <your-repo-url>
-cd telegram-bots
+1. 在 Telegram 中搜索 [@BotFather](https://t.me/BotFather)
+2. 发送 `/newbot` 命令并按指示操作
+3. 保存生成的 bot token
 
-# 安装依赖
-pip install -r requirements.txt
-```
+### 2. 获取聊天和用户 ID
 
-### 2. 设置环境变量
+1. **获取群组 ID**：
+   - 将机器人添加到所有相关群组
+   - 在群组中发送一条消息
+   - 访问 `https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates`
+   - 查找聊天 ID (群组 ID 通常是负数，如 `-1001234567890`)
 
-在运行前需要设置以下环境变量：
+2. **获取用户 ID**：
+   - 让用户在 Telegram 中发送消息给 [@userinfobot](https://t.me/userinfobot)
+   - 该机器人会回复用户的 ID
 
-```bash
-# 消息转发机器人
-export MESSAGE_BOT_TOKEN="你的消息机器人token"
-export YOUR_CHAT_ID="你的用户ID"
+### 3. 配置 GitHub Secrets
 
-# 命令控制机器人  
-export COMMAND_BOT_TOKEN="你的命令机器人token"
-export TOKEN="你的GitHub PAT"
-export REPO_FULL_NAME="username/repository"
-```
+在 GitHub 仓库的 **Settings → Secrets and variables → Actions** 中添加以下 secrets：
 
-### 3. 本地运行
+#### 必需的环境变量
+- `TELEGRAM_BOT_TOKEN`: 你的机器人 token
+- `TARGET_GROUP_ID`: 用户消息转发目标群组的 ID
+- `MONITOR_GROUP_ID`: 监控关键词的群组 ID
+- `RESPONSE_GROUP_ID`: 响应 `/open` 命令的群组 ID
+- `ALLOWED_USER_ID`: 允许触发 GitHub Action 的用户 ID
 
-```bash
-# 方式1: 使用启动脚本（推荐）
-chmod +x run_bots.sh
-./run_bots.sh
+#### 可选的环境变量
+- `KEYWORDS`: 逗号分隔的关键词列表 (例如: "urgent,important,alert")
+- `LOG_LEVEL`: 日志级别 (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+- `KEYWORD_MATCH_MODE`: 关键词匹配模式 (contains, exact, startswith, regex)
+- `MESSAGE_FORMAT`: 转发消息的格式模板
+- `GITHUB_TOKEN`: 用于触发 GitHub Action 的 token (默认使用 `secrets.GITHUB_TOKEN`)
 
-# 方式2: 分别运行
-cd bots
-python message_bot.py &  # 后台运行消息机器人
-python command_bot.py    # 前台运行命令机器人
-```
+### 4. 部署项目
 
-## GitHub Actions 部署
+1. 将本项目所有文件上传到 GitHub 仓库
+2. GitHub Actions 将自动运行工作流
+3. 机器人开始监听消息并执行相应功能
 
-### 1. 设置 Secrets
+## 使用方法
 
-在 GitHub 仓库的 Settings > Secrets and variables > Actions 中添加：
+### 私聊消息转发
+1. 用户与机器人开始私聊对话
+2. 发送任何消息给机器人
+3. 消息将自动转发到配置的目标群组
 
-| Secret 名称 | 说明 |
-|------------|------|
-| `MESSAGE_BOT_TOKEN` | 消息转发机器人的 Token |
-| `YOUR_CHAT_ID` | 接收消息的用户 ID |
-| `COMMAND_BOT_TOKEN` | 命令控制机器人的 Token |
-| `TOKEN` | GitHub Personal Access Token (具有 repo 权限) |
+### 关键词检测
+1. 在监控群组中发送包含预设关键词的消息
+2. 机器人检测到关键词后，将消息转发到响应群组
 
-### 2. 触发部署
+### 触发 GitHub Action
+1. 在响应群组中使用授权账户发送 `/open` 命令
+2. 机器人将触发配置的 GitHub Action 工作流
 
-部署可以通过以下方式触发：
+## 环境变量详情
 
-1. **代码推送**: 推送代码到 main 分支
-2. **手动触发**: 在 GitHub Actions 页面手动运行
-3. **命令触发**: 在群聊中发送 `/run` 命令
+### 必需变量
+| 变量名 | 描述 | 示例 |
+|--------|------|------|
+| `TELEGRAM_BOT_TOKEN` | Telegram 机器人令牌 | `1234567890:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi` |
+| `TARGET_GROUP_ID` | 用户消息转发目标群组 ID | `-1001234567890` |
+| `MONITOR_GROUP_ID` | 监控关键词的群组 ID | `-1001234567891` |
+| `RESPONSE_GROUP_ID` | 响应 `/open` 命令的群组 ID | `-1001234567892` |
+| `ALLOWED_USER_ID` | 允许触发 GitHub Action 的用户 ID | `123456789` |
 
-### 3. 群聊设置
-
-1. 将命令机器人添加为群组管理员
-2. 确保机器人有读取和发送消息的权限
-3. 群聊ID: `-1003073658115`
-
-## 环境变量说明
-
-| 变量名 | 必需 | 说明 | GitHub Secrets 名称 |
-|--------|------|------|-------------------|
-| `MESSAGE_BOT_TOKEN` | ✅ | 消息转发机器人的 Bot Token | `MESSAGE_BOT_TOKEN` |
-| `YOUR_CHAT_ID` | ✅ | 接收转发消息的用户 ID | `YOUR_CHAT_ID` |
-| `COMMAND_BOT_TOKEN` | ✅ | 命令控制机器人的 Bot Token | `COMMAND_BOT_TOKEN` |
-| `TOKEN` | ✅ | GitHub Personal Access Token (具有 repo 权限) | `TOKEN` |
-| `REPO_FULL_NAME` | ✅ | GitHub 仓库名称 (自动从环境获取) | (自动设置) |
-
-## 可用命令
-
-在配置的群聊中，管理员可以使用以下命令：
-
-- `/start` - 显示帮助信息
-- `/run` - 触发重新部署
-- `/status` - 检查机器人状态
-
-## GitHub Personal Access Token 设置
-
-### 创建 PAT 的步骤：
-1. 登录 GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
-2. 点击 "Generate new token" → "Generate new token (classic)"
-3. 设置 Note: "Telegram Bot Deploy"
-4. 设置 Expiration: 建议 30-90 天
-5. 选择权限: ✅ `repo` (全部权限)
-6. 生成 token 并保存到 GitHub Secrets 中的 `TOKEN`
-
-### 最小权限配置：
-```yaml
-Select scopes:
-- ✅ repo
-  - ✅ repo:status
-  - ✅ repo_deployment
-  - ✅ public_repo
-```
+### 可选变量
+| 变量名 | 描述 | 默认值 | 示例 |
+|--------|------|--------|------|
+| `KEYWORDS` | 触发转发的关键词列表 | 空 | `urgent,important,alert` |
+| `LOG_LEVEL` | 日志详细程度 | `INFO` | `DEBUG` |
+| `KEYWORD_MATCH_MODE` | 关键词匹配模式 | `contains` | `exact` |
+| `MESSAGE_FORMAT` | 转发消息格式模板 | `来自用户 {user_name} 的消息: {message}` | `[{timestamp}] {user_name}: {message}` |
+| `GITHUB_TOKEN` | GitHub API 令牌 | `secrets.GITHUB_TOKEN` | `ghp_xxxxxxxxxxxx` |
 
 ## 故障排除
 
 ### 常见问题
 
-1. **机器人不响应**
-   - 检查 Token 是否正确
-   - 确认机器人已添加到群组并设为管理员
+1. **机器人不响应消息**
+   - 检查 `TELEGRAM_BOT_TOKEN` 是否正确
+   - 确认机器人已添加到所有相关群组
 
 2. **消息未转发**
-   - 检查 `YOUR_CHAT_ID` 是否正确
-   - 确认消息转发机器人隐私设置允许读取消息
+   - 检查群组 ID 是否正确（群组 ID 通常是负数）
+   - 确认机器人有权限在群组中发送消息
 
-3. **命令不工作**
-   - 确认发送者是群组管理员
-   - 检查 GitHub Token 权限
+3. **GitHub Action 未触发**
+   - 检查 `ALLOWED_USER_ID` 是否正确
+   - 确认用户有权限在响应群组中发送消息
 
-4. **工作流触发失败**
-   - 检查 GitHub Token 是否有 repo 权限
-   - 确认仓库名称格式正确
+### 查看日志
 
-### 日志查看
+1. 在 GitHub 仓库中转到 **Actions** 标签页
+2. 选择最近的 **Telegram Bot Handler** 工作流运行
+3. 查看详细日志以识别问题
+
+### 环境变量检查
+
+运行环境变量检查脚本：
 
 ```bash
-# 查看 GitHub Actions 日志
-# 在仓库的 Actions 标签页查看运行日志
-
-# 本地运行时可查看控制台输出
+python check_env.py
 ```
 
-## 技术支持
+## 开发与贡献
 
-如果遇到问题：
+### 本地开发
 
-1. 检查 GitHub Actions 运行日志
-2. 确认所有环境变量已正确设置
-3. 验证机器人权限设置
-4. 检查网络连接是否正常
+1. 克隆项目到本地
+2. 安装依赖：`pip install -r requirements.txt`
+3. 设置环境变量
+4. 运行机器人：`python bot_handler.py`
 
-## 安全注意事项
+### 报告问题
 
-1. **Token 安全**: 不要将 token 硬编码在代码中
-2. **权限最小化**: 只授予必要的权限
-3. **定期轮换**: 定期更新 token
-4. **监控使用**: 监控 token 的使用情况
+使用项目中的问题模板报告 bug 或提出功能建议。
 
 ## 许可证
 
-本项目采用 MIT 许可证 - 详见 LICENSE 文件
+本项目采用 MIT 许可证。详见 [LICENSE](LICENSE) 文件。
 
 ## 更新日志
 
-### v1.0.0
+### v1.0.0 (2025-08-25)
 - 初始版本发布
-- 集成消息转发和命令控制功能
-- 支持 GitHub Actions 自动部署
-- 添加健康检查和自动重启机制
+- 实现私聊消息转发功能
+- 添加关键词检测功能
+- 支持 GitHub Action 触发
+- 提供完整的环境变量配置
 
----
+## 支持
 
-**注意**: 使用前请确保遵守 Telegram 和 GitHub 的使用条款，并尊重用户隐私。
+如果您遇到问题或有疑问，请：
+1. 查看本 README 中的故障排除部分
+2. 检查 GitHub Actions 日志
+3. 创建 issue 描述您的问题
+
+## 免责声明
+
+本项目仅用于教育和学习目的。使用者应遵守 Telegram 的使用条款和当地法律法规。开发者不对滥用此项目造成的任何后果负责。
