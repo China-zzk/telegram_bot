@@ -33,7 +33,7 @@ jobs:
         pip install -r requirements.txt
 
     - name: Make run_bots.sh executable
-      run: chmod +x run_bots.sh
+      run: chmod +x run_bot.sh
 
     - name: Run Telegram Bots
       env:
