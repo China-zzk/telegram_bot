@@ -1,5 +1,7 @@
 import os
 import logging
+import asyncio
+from datetime import datetime
 from telegram import Update
 from telegram.ext import Application, ContextTypes, MessageHandler, filters
 
@@ -18,6 +20,9 @@ YOUR_CHAT_ID = os.environ.get("YOUR_CHAT_ID")
 if not BOT_TOKEN or not YOUR_CHAT_ID:
     logger.error("请设置 BOT_TOKEN 和 YOUR_CHAT_ID 环境变量")
     exit(1)
+
+# 健康检查计数器
+health_check_count = 0
 
 async def forward_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """处理所有收到的消息并转发给指定用户"""
@@ -75,17 +80,60 @@ async def forward_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except:
             pass
 
+async def health_check(context: ContextTypes.DEFAULT_TYPE):
+    """定期发送健康状态"""
+    global health_check_count
+    health_check_count += 1
+    
+    try:
+        await context.bot.send_message(
+            chat_id=YOUR_CHAT_ID,
+            text=f"🤖 机器人正常运行 - 健康检查 #{health_check_count}\n"
+                 f"时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                 f"运行环境: GitHub Actions (Ubuntu Linux)"
+        )
+        logger.info(f"健康检查 #{health_check_count} 已发送")
+    except Exception as e:
+        logger.error(f"发送健康检查时出错: {e}")
+
+async def post_init(application: Application):
+    """机器人初始化后执行"""
+    # 发送启动通知
+    try:
+        await application.bot.send_message(
+            chat_id=YOUR_CHAT_ID,
+            text="🚀 Telegram 机器人已启动!\n"
+                 f"时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                 "环境: GitHub Actions"
+        )
+    except Exception as e:
+        logger.error(f"发送启动通知时出错: {e}")
+
 def main():
     """启动机器人"""
-    # 创建Application实例
-    application = Application.builder().token(BOT_TOKEN).build()
-    
-    # 添加消息处理器，处理所有非命令消息
-    application.add_handler(MessageHandler(filters.ALL & ~filters.COMMAND, forward_message))
-    
-    # 启动机器人
-    logger.info("机器人已启动...")
-    application.run_polling()
+    try:
+        # 创建Application实例
+        application = Application.builder().token(BOT_TOKEN).build()
+        
+        # 设置初始化后回调
+        application.post_init = post_init
+        
+        # 添加消息处理器，处理所有非命令消息
+        application.add_handler(MessageHandler(filters.ALL & ~filters.COMMAND, forward_message))
+        
+        # 添加定期健康检查（每4小时一次）
+        job_queue = application.job_queue
+        if job_queue:
+            job_queue.run_repeating(health_check, interval=14400, first=10)  # 4小时 = 14400秒
+        
+        # 启动机器人
+        logger.info("机器人启动中...")
+        application.run_polling()
+        
+    except Exception as e:
+        logger.error(f"启动机器人时发生错误: {e}")
+        # 重新抛出异常以便run_bot.sh可以捕获
+        raise
 
 if __name__ == "__main__":
     main()
