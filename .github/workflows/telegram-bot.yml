@@ -4,21 +4,23 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch: # 允许手动触发
+  repository_dispatch: # 允许通过API触发
+    types: [run-bot-deployment]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.action == 'run-bot-deployment'
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Debug - Show OS info
+    - name: Debug - Show trigger info
       run: |
-        echo "Running on: $(uname -s)"
-        echo "Distribution: $(lsb_release -d | cut -f2)"
-        echo "Python path: $(which python3)"
-        echo "Python version: $(python3 --version)"
+        echo "工作流触发方式: ${{ github.event_name }}"
+        echo "触发分支: ${{ github.ref }}"
+        echo "仓库: ${{ github.repository }}"
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -30,13 +32,18 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Make run_bot.sh executable
-      run: chmod +x run_bot.sh
+    - name: Make run_bots.sh executable
+      run: chmod +x run_bots.sh
 
-    - name: Run Telegram Bot
+    - name: Run Telegram Bots
       env:
-        BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        # 消息转发机器人的环境变量
+        MESSAGE_BOT_TOKEN: ${{ secrets.MESSAGE_BOT_TOKEN }}
         YOUR_CHAT_ID: ${{ secrets.YOUR_CHAT_ID }}
+        # 命令机器人的环境变量
+        COMMAND_BOT_TOKEN: ${{ secrets.COMMAND_BOT_TOKEN }}
+        TOKEN: ${{ secrets.TOKEN }}  # 修改为 TOKEN
+        REPO_FULL_NAME: ${{ github.repository }}
       run: |
         echo "启动 Telegram 机器人..."
-        ./run_bot.sh
+        ./run_bots.sh
