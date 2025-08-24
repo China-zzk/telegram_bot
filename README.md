@@ -27,7 +27,7 @@ telegram-bot-project/
 └── README.md                         # 项目说明文档
 ```
 
-## 快速开始
+## 快速开始[设置指南](SETUP.md)
 
 ### 1. 创建 Telegram 机器人
 
