@@ -1,63 +1,48 @@
-name: Telegram Bot
+name: Telegram Bot Handler
 
 on:
+  workflow_dispatch:  # 允许手动触发
+  repository_dispatch:  # 允许通过API触发
+    types: [trigger-open-command]
   push:
     branches: [ main ]
-  workflow_dispatch: # 允许手动触发
-  repository_dispatch: # 允许通过API触发
-    types: [run-bot-deployment]
+    paths:
+      - 'bot_handler.py'
+      - '.github/workflows/telegram-bot.yml'
+  schedule:
+    # 每5小时运行一次，避免GitHub Actions 6小时限制
+    - cron: '0 */5 * * *'
 
 jobs:
-  deploy:
+  run-bot:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.action == 'run-bot-deployment'
-
+    timeout-minutes: 355  # 略小于6小时，避免超时
+    
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Debug - Show trigger info
-      run: |
-        echo "工作流触发方式: ${{ github.event_name }}"
-        echo "触发分支: ${{ github.ref }}"
-        echo "仓库: ${{ github.repository }}"
-
+      uses: actions/checkout@v3
+      
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
-
+        python-version: '3.9'
+        
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-
-    - name: Make run_bot.sh executable
-      run: chmod +x run_bot.sh
-
-    - name: Validate environment variables
-      run: |
-        if [ -z "${{ secrets.COMMAND_GROUP_ID }}" ]; then
-          echo "❌ 错误: COMMAND_GROUP_ID 环境变量未设置"
-          exit 1
-        fi
-        echo "✅ 环境变量验证通过"
-
-    - name: Run Telegram Bots
+        
+    - name: Run Telegram Bot
       env:
-        # 消息转发机器人的环境变量
-        MESSAGE_BOT_TOKEN: ${{ secrets.MESSAGE_BOT_TOKEN }}
-        YOUR_CHAT_ID: ${{ secrets.YOUR_CHAT_ID }}
-        KEYWORD_GROUP_ID: ${{ secrets.KEYWORD_GROUP_ID }}  # 关键词转发群聊ID
-        KEYWORDS: ${{ secrets.KEYWORDS }}  # 关键词列表
-        # 命令机器人的环境变量
-        COMMAND_BOT_TOKEN: ${{ secrets.COMMAND_BOT_TOKEN }}
-        COMMAND_GROUP_ID: ${{ secrets.COMMAND_GROUP_ID }}  # 必需：命令群聊ID
-        TOKEN: ${{ secrets.TOKEN }}
-        REPO_FULL_NAME: ${{ github.repository }}
-      run: |
-        echo "启动 Telegram 机器人..."
-        echo "命令群聊ID: $COMMAND_GROUP_ID"
-        echo "监控关键词: $KEYWORDS"
-        echo "关键词转发群聊: $KEYWORD_GROUP_ID"
-        ./run_bot.sh
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TARGET_GROUP_ID: ${{ secrets.TARGET_GROUP_ID }}
+        MONITOR_GROUP_ID: ${{ secrets.MONITOR_GROUP_ID }}
+        RESPONSE_GROUP_ID: ${{ secrets.RESPONSE_GROUP_ID }}
+        KEYWORDS: ${{ secrets.KEYWORDS }}
+        ALLOWED_USER_ID: ${{ secrets.ALLOWED_USER_ID }}
+        LOG_LEVEL: ${{ secrets.LOG_LEVEL }}
+        KEYWORD_MATCH_MODE: ${{ secrets.KEYWORD_MATCH_MODE }}
+        MESSAGE_FORMAT: ${{ secrets.MESSAGE_FORMAT }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+      run: python bot_handler.py
