@@ -46,4 +46,4 @@ jobs:
         REPO_FULL_NAME: ${{ github.repository }}
       run: |
         echo "启动 Telegram 机器人..."
-        ./run_bots.sh
+        ./run_bot.sh
