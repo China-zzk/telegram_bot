@@ -57,8 +57,8 @@ export YOUR_CHAT_ID="你的用户ID"
 
 # 命令控制机器人  
 export COMMAND_BOT_TOKEN="你的命令机器人token"
-export GITHUB_TOKEN="你的GitHub PAT"
-export GITHUB_REPO="username/repository"
+export TOKEN="你的GitHub PAT"
+export REPO_FULL_NAME="username/repository"
 ```
 
 ### 3. 本地运行
@@ -85,7 +85,7 @@ python command_bot.py    # 前台运行命令机器人
 | `MESSAGE_BOT_TOKEN` | 消息转发机器人的 Token |
 | `YOUR_CHAT_ID` | 接收消息的用户 ID |
 | `COMMAND_BOT_TOKEN` | 命令控制机器人的 Token |
-| `GITHUB_TOKEN` | GitHub Personal Access Token |
+| `TOKEN` | GitHub Personal Access Token (具有 repo 权限) |
 
 ### 2. 触发部署
 
@@ -103,13 +103,13 @@ python command_bot.py    # 前台运行命令机器人
 
 ## 环境变量说明
 
-| 变量名 | 必需 | 说明 |
-|--------|------|------|
-| `MESSAGE_BOT_TOKEN` | ✅ | 消息转发机器人的 Bot Token |
-| `YOUR_CHAT_ID` | ✅ | 接收转发消息的用户 ID |
-| `COMMAND_BOT_TOKEN` | ✅ | 命令控制机器人的 Bot Token |
-| `GITHUB_TOKEN` | ✅ | GitHub Personal Access Token |
-| `GITHUB_REPO` | ✅ | GitHub 仓库名称 (格式: username/repo) |
+| 变量名 | 必需 | 说明 | GitHub Secrets 名称 |
+|--------|------|------|-------------------|
+| `MESSAGE_BOT_TOKEN` | ✅ | 消息转发机器人的 Bot Token | `MESSAGE_BOT_TOKEN` |
+| `YOUR_CHAT_ID` | ✅ | 接收转发消息的用户 ID | `YOUR_CHAT_ID` |
+| `COMMAND_BOT_TOKEN` | ✅ | 命令控制机器人的 Bot Token | `COMMAND_BOT_TOKEN` |
+| `TOKEN` | ✅ | GitHub Personal Access Token (具有 repo 权限) | `TOKEN` |
+| `REPO_FULL_NAME` | ✅ | GitHub 仓库名称 (自动从环境获取) | (自动设置) |
 
 ## 可用命令
 
@@ -118,6 +118,25 @@ python command_bot.py    # 前台运行命令机器人
 - `/start` - 显示帮助信息
 - `/run` - 触发重新部署
 - `/status` - 检查机器人状态
+
+## GitHub Personal Access Token 设置
+
+### 创建 PAT 的步骤：
+1. 登录 GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
+2. 点击 "Generate new token" → "Generate new token (classic)"
+3. 设置 Note: "Telegram Bot Deploy"
+4. 设置 Expiration: 建议 30-90 天
+5. 选择权限: ✅ `repo` (全部权限)
+6. 生成 token 并保存到 GitHub Secrets 中的 `TOKEN`
+
+### 最小权限配置：
+```yaml
+Select scopes:
+- ✅ repo
+  - ✅ repo:status
+  - ✅ repo_deployment
+  - ✅ public_repo
+```
 
 ## 故障排除
 
@@ -156,6 +175,13 @@ python command_bot.py    # 前台运行命令机器人
 2. 确认所有环境变量已正确设置
 3. 验证机器人权限设置
 4. 检查网络连接是否正常
+
+## 安全注意事项
+
+1. **Token 安全**: 不要将 token 硬编码在代码中
+2. **权限最小化**: 只授予必要的权限
+3. **定期轮换**: 定期更新 token
+4. **监控使用**: 监控 token 的使用情况
 
 ## 许可证
 
