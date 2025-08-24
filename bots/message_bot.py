@@ -1,6 +1,5 @@
 import os
 import logging
-import asyncio
 from datetime import datetime
 from telegram import Update
 from telegram.ext import Application, ContextTypes, MessageHandler, filters
@@ -13,12 +12,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # 从环境变量获取配置
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
+BOT_TOKEN = os.environ.get("MESSAGE_BOT_TOKEN")
 YOUR_CHAT_ID = os.environ.get("YOUR_CHAT_ID")
 
 # 检查必要的环境变量
 if not BOT_TOKEN or not YOUR_CHAT_ID:
-    logger.error("请设置 BOT_TOKEN 和 YOUR_CHAT_ID 环境变量")
+    logger.error("请设置 MESSAGE_BOT_TOKEN 和 YOUR_CHAT_ID 环境变量")
     exit(1)
 
 # 健康检查计数器
@@ -88,11 +87,11 @@ async def health_check(context: ContextTypes.DEFAULT_TYPE):
     try:
         await context.bot.send_message(
             chat_id=YOUR_CHAT_ID,
-            text=f"🤖 机器人正常运行 - 健康检查 #{health_check_count}\n"
+            text=f"🤖 消息机器人正常运行 - 健康检查 #{health_check_count}\n"
                  f"时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
                  f"运行环境: GitHub Actions (Ubuntu Linux)"
         )
-        logger.info(f"健康检查 #{health_check_count} 已发送")
+        logger.info(f"消息机器人健康检查 #{health_check_count} 已发送")
     except Exception as e:
         logger.error(f"发送健康检查时出错: {e}")
 
@@ -102,15 +101,15 @@ async def post_init(application: Application):
     try:
         await application.bot.send_message(
             chat_id=YOUR_CHAT_ID,
-            text="🚀 Telegram 机器人已启动!\n"
+            text="🚀 消息转发机器人已启动!\n"
                  f"时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
                  "环境: GitHub Actions"
         )
     except Exception as e:
         logger.error(f"发送启动通知时出错: {e}")
 
-def main():
-    """启动机器人"""
+def run_message_bot():
+    """启动消息转发机器人"""
     try:
         # 创建Application实例
         application = Application.builder().token(BOT_TOKEN).build()
@@ -127,13 +126,13 @@ def main():
             job_queue.run_repeating(health_check, interval=14400, first=10)  # 4小时 = 14400秒
         
         # 启动机器人
-        logger.info("机器人启动中...")
+        logger.info("消息转发机器人启动中...")
         application.run_polling()
         
     except Exception as e:
-        logger.error(f"启动机器人时发生错误: {e}")
-        # 重新抛出异常以便run_bot.sh可以捕获
+        logger.error(f"启动消息转发机器人时发生错误: {e}")
+        # 重新抛出异常以便run_bots.sh可以捕获
         raise
 
 if __name__ == "__main__":
-    main()
+    run_message_bot()
