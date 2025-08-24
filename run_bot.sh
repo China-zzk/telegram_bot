@@ -8,6 +8,17 @@ log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
 }
 
+# 验证必需的环境变量
+if [ -z "$COMMAND_GROUP_ID" ]; then
+    log "❌ 错误: COMMAND_GROUP_ID 环境变量未设置"
+    exit 1
+fi
+
+log "开始运行 Telegram 机器人"
+log "命令群聊ID: $COMMAND_GROUP_ID"
+log "关键词转发群聊: $KEYWORD_GROUP_ID"
+log "监控关键词: $KEYWORDS"
+
 # 启动消息转发机器人
 start_message_bot() {
     local restart_count=0
@@ -23,7 +34,7 @@ start_message_bot() {
         if [ $EXIT_CODE -eq 0 ]; then
             log "消息转发机器人正常退出"
             break
-        else
+        else:
             restart_count=$((restart_count+1))
             log "消息转发机器人异常退出，代码: $EXIT_CODE"
             log "重启次数: $restart_count/$max_restarts"
@@ -53,9 +64,9 @@ start_command_bot() {
         if [ $EXIT_CODE -eq 0 ]; then
             log "命令机器人正常退出"
             break
-        else
+        else:
             restart_count=$((restart_count+1))
-            log "命令机器人异常退出，代码: $EXIT_CODE"
+            log "命令机器人异常退出，代码:极可能 #$((restart_count+1))"
             log "重启次数: $restart_count/$max_restarts"
             
             if [ $restart_count -lt $max_restarts ]; then
@@ -67,8 +78,6 @@ start_command_bot() {
         fi
     done
 }
-
-log "开始运行 Telegram 机器人"
 
 # 在后台同时启动两个机器人
 start_message_bot &

@@ -32,18 +32,32 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Make run_bots.sh executable
+    - name: Make run_bot.sh executable
       run: chmod +x run_bot.sh
+
+    - name: Validate environment variables
+      run: |
+        if [ -z "${{ secrets.COMMAND_GROUP_ID }}" ]; then
+          echo "❌ 错误: COMMAND_GROUP_ID 环境变量未设置"
+          exit 1
+        fi
+        echo "✅ 环境变量验证通过"
 
     - name: Run Telegram Bots
       env:
         # 消息转发机器人的环境变量
         MESSAGE_BOT_TOKEN: ${{ secrets.MESSAGE_BOT_TOKEN }}
         YOUR_CHAT_ID: ${{ secrets.YOUR_CHAT_ID }}
+        KEYWORD_GROUP_ID: ${{ secrets.KEYWORD_GROUP_ID }}  # 关键词转发群聊ID
+        KEYWORDS: ${{ secrets.KEYWORDS }}  # 关键词列表
         # 命令机器人的环境变量
         COMMAND_BOT_TOKEN: ${{ secrets.COMMAND_BOT_TOKEN }}
-        TOKEN: ${{ secrets.TOKEN }}  # 修改为 TOKEN
+        COMMAND_GROUP_ID: ${{ secrets.COMMAND_GROUP_ID }}  # 必需：命令群聊ID
+        TOKEN: ${{ secrets.TOKEN }}
         REPO_FULL_NAME: ${{ github.repository }}
       run: |
         echo "启动 Telegram 机器人..."
+        echo "命令群聊ID: $COMMAND_GROUP_ID"
+        echo "监控关键词: $KEYWORDS"
+        echo "关键词转发群聊: $KEYWORD_GROUP_ID"
         ./run_bot.sh
