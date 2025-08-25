@@ -32,7 +32,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         
-    - name: Run Telegram Bot
+    - name: Run environment check
       env:
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         TARGET_GROUP_ID: ${{ secrets.TARGET_GROUP_ID }}
@@ -43,6 +43,22 @@ jobs:
         LOG_LEVEL: ${{ secrets.LOG_LEVEL }}
         KEYWORD_MATCH_MODE: ${{ secrets.KEYWORD_MATCH_MODE }}
         MESSAGE_FORMAT: ${{ secrets.MESSAGE_FORMAT }}
+        FORWARD_BOT_MESSAGES: ${{ secrets.FORWARD_BOT_MESSAGES }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: python check_env.py
+        
+    - name: Run Telegram Bot
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TARGET_GROUP_ID: ${{ secrets.TARGET_GROUP_ID }}
+        MONITOR_GROUP_ID: ${{ secrets.MONITOR_GROUP_ID }}
+        RESPONSE_GROUP_ID: ${{ secrets.RESPONSE_GROUP_ID }}
+        KEYWORDS: ${{ secrets.KEYWORDS }}
+        ALLOWED_USER_ID: ${{ secrets.ALLOWED_USER_ID }}
+        LOG_LEVEL: ${{ secrets.LOG_LEVEL }}
+        KEYWORD_MATCH_MODE: ${{ secrets.KETWORD_MATCH_MODE }}
+        MESSAGE_FORMAT: ${{ secrets.MESSAGE_FORMAT }}
+        FORWARD_BOT_MESSAGES: ${{ secrets.FORWARD_BOT_MESSAGES }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GITHUB_REPOSITORY: ${{ github.repository }}
       run: python bot_handler.py
