@@ -13,6 +13,7 @@ optional_vars = [
     'LOG_LEVEL',
     'KEYWORD_MATCH_MODE',
     'MESSAGE_FORMAT',
+    'FORWARD_BOT_MESSAGES',
     'GITHUB_TOKEN'
 ]
 
@@ -36,9 +37,15 @@ print("\n可选的环境变量:")
 for var in optional_vars:
     value = os.environ.get(var)
     if value:
-        print(f"✓ {var}: 已设置")
+        if var == 'FORWARD_BOT_MESSAGES':
+            print(f"✓ {var}: {value} (将{'转发' if value.lower() == 'true' else '不转发'}其他机器人的消息)")
+        else:
+            print(f"✓ {var}: 已设置")
     else:
-        print(f"○ {var}: 未设置 (使用默认值)")
+        if var == 'FORWARD_BOT_MESSAGES':
+            print(f"○ {var}: 未设置 (使用默认值: true - 将转发其他机器人的消息)")
+        else:
+            print(f"○ {var}: 未设置 (使用默认值)")
 
 print("\n" + "=" * 50)
 if all_required_set:
