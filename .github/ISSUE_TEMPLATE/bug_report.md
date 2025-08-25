@@ -26,6 +26,7 @@ assignees: ''
  - 操作系统: [例如 Ubuntu 20.04]
  - Python 版本: [例如 3.9]
  - 软件包版本: [例如 python-telegram-bot 20.7]
+ - FORWARD_BOT_MESSAGES 设置: [true/false]
 
 **附加上下文**
 添加有关问题的任何其他上下文。
